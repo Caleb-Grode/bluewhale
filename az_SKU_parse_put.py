@@ -3,7 +3,7 @@ import requests
 import adal
 import boto3
 
-# timeout: 15 seconds (takes about 4)
+# timeout: 30 seconds (takes about 15)
 # memory: 512MB (uses about 251)
 
 def lambda_handler(event, context):
@@ -54,38 +54,54 @@ def lambda_handler(event, context):
     
     # parse out the specifications of the VMs
     all_vm_specs = []
-    for v in vm:
+    name_dict = {}
+    for v in vm:       
         vm_specs = {}
         vm_specs['name'] = v['name']
         for c in v['capabilities']:
-            if c['name'] == 'vCPUs' or c['name'] == 'MemoryGB' or c['name'] == 'vCPUsAvailable' or c['name'] == 'ACUs' or c['name'] == 'vCPUsPerCore':
+            if c['name'] == 'vCPUs' or c['name'] == 'MemoryGB' or c['name'] == 'ACUs' or c['name'] == 'vCPUsPerCore' or c['name'] == 'MaxResourceVolumeMB' or c['name'] == 'GPUs':
                 vm_specs[c['name']] = c['value']
-        all_vm_specs.append(vm_specs)
+        name_dict[v['name']] = vm_specs
+
+    for key,value in name_dict.items():
+        all_vm_specs.append(value)
+        
     
     # parse out the specifications of the disks
+    name_dict.clear()
     all_disk_specs = []
     for d in disk:
         disk_specs = {}
-        disk_specs['name'] = v['name']
-        disk_specs['size'] = v['size']
+        disk_specs['name'] = d['name']
+        disk_specs['size'] = d['size']
         for c in d['capabilities']:
             disk_specs[c['name']] = c['value']
-        all_disk_specs.append(disk_specs)
-    
+        name_dict[d['name']] = disk_specs
+           
+    for ky,val in name_dict.items():
+        all_disk_specs.append(val)
+
     # now we have the data we want!
-    
+
+
+    print('Number of VMs: ' + str(len(all_vm_specs)))
+    print('Number of disks: ' + str(len(all_disk_specs)))
+
+
+    print("Inputing VMs into DB...")
     # put the data into the database
     azure_vm_table = boto3.resource('dynamodb').Table('bluewhale_vm_3rd_party')
     for item in all_vm_specs:
         azure_vm_table.put_item(Item=item)
+    print("Done!")
     
+    print("Inputing disks into DB...")
     azure_disk_table = boto3.resource('dynamodb').Table('bluewhale_disk_3rd_party')
     for item in all_disk_specs:
         azure_disk_table.put_item(Item=item)
-
-
+    print("Done!")
     
     return {
         'statusCode': 200,
-        'body': json.dumps('Hello from Lambda!')
+        'body': json.dumps('Refresh complete!')
     }
