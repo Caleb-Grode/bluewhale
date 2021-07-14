@@ -51,6 +51,15 @@ def lambda_handler(event, context):
                 j
             )
     
+    # associates the first letter of a vm size with its (AWS equivalent) compute category
+    vm_types = {
+        'D':'general purpose', 'A':'general purpose', 'B':'general purpose', 
+        'F':'compute optimized','H':'compute optimized',
+        'E':'memory optimized', 'M':'memory optimized', 'G':'memory optimized',
+        'L':'storage optimized',
+        'N':'accelerated computing',
+        'P':'unknown edge case'        
+    }
     
     # parse out the specifications of the VMs
     all_vm_specs = []
@@ -58,12 +67,19 @@ def lambda_handler(event, context):
     for v in vm:       
         vm_specs = {}
         vm_specs['name'] = v['name']
+        vm_specs['virtual machine type'] = vm_types[v['size'][0]] # categorize the vm type based off above dictionary
         for c in v['capabilities']:
             if c['name'] == 'vCPUs' or c['name'] == 'MemoryGB' or c['name'] == 'ACUs' or c['name'] == 'vCPUsPerCore' or c['name'] == 'MaxResourceVolumeMB' or c['name'] == 'GPUs':
                 vm_specs[c['name']] = c['value']
         name_dict[v['name']] = vm_specs
 
-    for key,value in name_dict.items():
+    
+
+
+    # add in data columns
+    for key,value in name_dict.items():   
+        value['resource type'] = 'virtual machine'
+        value['provider'] = 'Azure'
         all_vm_specs.append(value)
         
     
@@ -79,6 +95,8 @@ def lambda_handler(event, context):
         name_dict[d['name']] = disk_specs
            
     for ky,val in name_dict.items():
+        val['resource type'] = 'virtual disk'
+        val['provider'] = 'Azure'
         all_disk_specs.append(val)
 
     # now we have the data we want!
@@ -90,13 +108,13 @@ def lambda_handler(event, context):
 
     print("Inputing VMs into DB...")
     # put the data into the database
-    azure_vm_table = boto3.resource('dynamodb').Table('bluewhale_vm_3rd_party')
+    azure_vm_table = boto3.resource('dynamodb').Table('bluewhale_resources')
     for item in all_vm_specs:
         azure_vm_table.put_item(Item=item)
     print("Done!")
     
     print("Inputing disks into DB...")
-    azure_disk_table = boto3.resource('dynamodb').Table('bluewhale_disk_3rd_party')
+    azure_disk_table = boto3.resource('dynamodb').Table('bluewhale_resources')
     for item in all_disk_specs:
         azure_disk_table.put_item(Item=item)
     print("Done!")
