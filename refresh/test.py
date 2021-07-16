@@ -2,36 +2,34 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.conditions import Attr
 import time
-
-# this function can throttle DynamoDB
-# with 5 RCUs it takes about 26 minutes
-# with 150 RCUs it takes about 1 minute
 start = time.time()
 
 dynamodb = boto3.resource('dynamodb', endpoint_url="https://dynamodb.us-east-1.amazonaws.com")
 
 table = dynamodb.Table('bluewhale_resources')
 
+# query for AWS vm
+AWS_vm= table.scan(
+            # virtual machine from AWS which has the same type and more or equal vCPUs and similar ram capacity
+            FilterExpression= Attr('resource type').eq('virtual machine') 
+                            & Attr('provider').eq('AWS')
+)
+
 def match_vm(vm,t):
     # get vm specs
     vCPUs = vm['vCPUs']
     memory = vm['MemoryMB']
     type = vm['virtual machine type']
+    potential_matches = []
+    matched_instances = []
 
-    # query for potential matches
-    matches = t.scan(
-            # virtual machine from AWS which has the same type and more or equal vCPUs and similar ram capacity
-            FilterExpression= Attr('resource type').eq('virtual machine') 
-                            & Attr('provider').eq('AWS')
-                            & Attr('virtual machine type').eq(type)
-                            & Attr('vCPUs').gte(vCPUs)
-                            # memory in range inf to (-20%)
-                            & Attr('MemoryMB').gte(int(float(memory) - (float(memory)*0.2)))
-    )
-
+    # filter potential matches
+    for vm in AWS_vm['Items']:
+        if vm['virtual machine type'] == type and 'vCPUs' == vCPUs and 'MemoryMB' >= int(float(memory) - (float(memory)*0.2)):
+            potential_matches.append(vm)
 
     # edge case where AWS does not offer large enough instance in terms of vCPUs
-    if not matches['Items']:
+    if not potential_matches:
         # if this is the case, we will return the largest possible instance
         # get all of the specified type
         data = t.scan(
@@ -54,26 +52,18 @@ def match_vm(vm,t):
         return largest_matches
     
     # find the lowest number of vCPUs for potential match
-    values = [x['vCPUs'] for x in matches['Items']]
-    min_vCPUs = min(values)
-
-
-    # add all instances with that many vCPUs to list
-    # find the lowest amount of memory at the same time
-    matched_instances = []
-    potential_matches = []
-    for instance in matches['Items']:
-        if instance['vCPUs'] == min_vCPUs:
-            potential_matches.append(instance)
+    
+    min_vCPUs = min(potential_matches, key=lambda x:x['vCPUs'] == vm['vCPUs'])
 
     # we now have the instances matched by vCPUs now we need to match by memory
+
 
     # we are going to try to find the 5 closest instances in memory
     for i in range(0,5):
         # while we still have options
-        if potential_matches:
+        if min_vCPUs:
             # find the closest instance
-            closest = min(potential_matches, key=lambda x:abs(x['MemoryMB']-vm['MemoryMB']))
+            closest = min(min_vCPUs, key=lambda x:abs(x['MemoryMB']-vm['MemoryMB']))
             # add the instance to our final list
             matched_instances.append(closest['name'])
             
@@ -109,8 +99,7 @@ for vm in third_party_vm['Items']:
         ReturnValues="UPDATED_NEW"
     )
 print("done!")
-end = time.time()
-print("Time: ",end - start)
+
 
 
 

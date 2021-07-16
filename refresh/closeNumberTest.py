@@ -1,3 +1,6 @@
+import time
+start = time.time()
+
 potential_matches = [{'MemoryMB':2,'name':1},{'MemoryMB':2,'name':2},{'MemoryMB':3,'name':3},{'MemoryMB':10,'name':4},{'MemoryMB':1,'name':5},{'MemoryMB':5,'name':6}]
 vm = {}
 vm['MemoryMB'] = 1
@@ -16,4 +19,6 @@ for i in range(0,5):
     potential_matches = [i for i in potential_matches if not (i['name'] == closest['name'])]
 
 # we now have a list of the five closest instances by memory
-
+time.sleep(0.9)
+end = time.time()
+print("Time consumed in working: ",end - start)
