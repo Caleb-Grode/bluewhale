@@ -1,3 +1,9 @@
+# Author: Caleb Grode
+# Purpose: This function calls an EC2 API to retrieve specs about the different AWS EC2 offerings. 
+#          It categorizes and selects the desired specs for every returned instance and puts them into the DynamoDB
+#          Table 'bluewhale_resources'
+
+
 import boto3
 import json
 

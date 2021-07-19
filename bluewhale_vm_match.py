@@ -1,16 +1,14 @@
+# Author: Caleb Grode
+# Purpose: Match each GCP and Azure vm with up to 5 AWS matches. Add string set of AWS instance names to each 3rd party vm object in DynamoDB
+
+import json
 import boto3
 from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.conditions import Attr
-import time
 
 # this function can throttle DynamoDB
 # with 5 RCUs it takes about 26 minutes
-# with 150 RCUs it takes about 1 minute
-start = time.time()
-
-dynamodb = boto3.resource('dynamodb', endpoint_url="https://dynamodb.us-east-1.amazonaws.com")
-
-table = dynamodb.Table('bluewhale_resources')
+# with 250 RCUs it takes about 1.5 minutes
 
 def match_vm(vm,t):
     # get vm specs
@@ -41,7 +39,7 @@ def match_vm(vm,t):
         )
         if not data['Items']:
             return []
-        # find the lowest number of vCPUs for potential match
+        # find the highest number of vCPUs for potential match
         values = [x['vCPUs'] for x in data['Items']]
         max_vCPUs = max(values)
 
@@ -83,34 +81,39 @@ def match_vm(vm,t):
             # repeat 5x
 
     return matched_instances
+    
+    
+def lambda_handler(event, context):
+    dynamodb = boto3.resource('dynamodb', endpoint_url="https://dynamodb.us-east-1.amazonaws.com")
 
-print("Getting data...")
-# get azure and gcp vm data
-third_party_vm = table.scan(
-    FilterExpression= Attr('resource type').eq('virtual machine') & (Attr('provider').eq('Azure') or Attr('provider').eq('GCP'))
-    )
-
-print("begin matching...")
-counter = 0
-# add in the AWS matches to each vm!
-for vm in third_party_vm['Items']:
-    counter = counter + 1
-    print(str(counter) + ' ' + vm['name'])
-
-    matches = match_vm(vm,table)
-    table.update_item(
-        Key={
-            'name': vm['name']
+    table = dynamodb.Table('bluewhale_resources')
+    
+    print("Getting data...")
+    # get azure and gcp vm data
+    third_party_vm = table.scan(
+        FilterExpression= Attr('resource type').eq('virtual machine') & (Attr('provider').eq('Azure') or Attr('provider').eq('GCP'))
+        )
+    
+    print("begin matching...")
+    counter = 0
+    # add in the AWS matches to each vm!
+    for vm in third_party_vm['Items']:
+        counter = counter + 1
+        print(str(counter) + ' ' + vm['name'])
+    
+        matches = match_vm(vm,table)
+        table.update_item(
+            Key={
+                'name': vm['name']
+                },
+            UpdateExpression="set AWS_matches=:a",
+            ExpressionAttributeValues={
+                ':a': matches
             },
-        UpdateExpression="set AWS_matches=:a",
-        ExpressionAttributeValues={
-            ':a': matches
-        },
-        ReturnValues="UPDATED_NEW"
-    )
-print("done!")
-end = time.time()
-print("Time: ",end - start)
-
-
-
+            ReturnValues="UPDATED_NEW"
+        )
+    print("done!")
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Matching complete!')
+    }

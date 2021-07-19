@@ -1,7 +1,13 @@
+# Author: Caleb Grode
+# Purpose: This function calls an Azure API to retrieve specs about the different Azure VM & virtual disk offerings. 
+#          It categorizes and selects the desired specs for every returned instance and puts them into the DynamoDB
+#          table 'bluewhale_resources'
+
 import json
 import requests
 import adal
 import boto3
+from decimal import Decimal
 
 # timeout: 30 seconds (takes about 15)
 # memory: 512MB (uses about 251)
@@ -70,7 +76,13 @@ def lambda_handler(event, context):
         vm_specs['virtual machine type'] = vm_types[v['size'][0]] # categorize the vm type based off above dictionary
         for c in v['capabilities']:
             if c['name'] == 'vCPUs' or c['name'] == 'MemoryGB' or c['name'] == 'ACUs' or c['name'] == 'vCPUsPerCore' or c['name'] == 'MaxResourceVolumeMB' or c['name'] == 'GPUs':
-                vm_specs[c['name']] = c['value']
+                
+                if c['name'] == 'MemoryGB':
+                    vm_specs['MemoryMB'] = int(Decimal(c['value'])*1000) # convert to MB for better matching
+                if c['name'] == 'vCPUs' or c['name'] == 'vCPUsPerCore':
+                    vm_specs[c['name']] = int(c['value'])
+                else:
+                    vm_specs[c['name']] = c['value']
         name_dict[v['name']] = vm_specs
 
     
