@@ -45,7 +45,7 @@ def lambda_handler(event, context):
                 'resource type' : 'virtual machine',
                 'virtual machine type' : type,
                 'vCPUs': int(instance['VCpuInfo']['DefaultVCpus']),
-                'MemoryMB': int(instance['MemoryInfo']['SizeInMiB']), # convert from MiB to GB and round to nearest whole number
+                'MemoryMB': int(int(instance['MemoryInfo']['SizeInMiB']) * 1.049), # conver from Mib to MB
                 'NetworkInfo': instance['NetworkInfo'],
                 'provider': 'AWS'
     
