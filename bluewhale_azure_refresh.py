@@ -8,6 +8,7 @@ import requests
 import adal
 import boto3
 from decimal import Decimal
+import os
 
 # timeout: 30 seconds (takes about 15)
 # memory: 512MB (uses about 251)
@@ -15,10 +16,10 @@ from decimal import Decimal
 def lambda_handler(event, context):
 
     # info for azure authentification
-    azure_client_id = '445dd70f-6e05-4b46-b9c6-70a2f76f74a3'
-    azure_secret = '2zSQ1B_fSWfgj_~7HcEzBO9rob0-IVVSXx'
-    azure_subscription_id = 'ccd88d99-7410-4b16-a568-e76803014994'
-    azure_tenant = 'd194cd5c-f1f0-453d-bd4b-df49d6ac9d48'
+    azure_client_id = os.environ['azure_client_id']
+    azure_secret = os.environ['azure_secret']
+    azure_subscription_id = os.environ['azure_subscription_id']
+    azure_tenant = os.environ['azure_tenant']
     authority_url = 'https://login.microsoftonline.com/' + azure_tenant
     resource = 'https://management.azure.com/'
     

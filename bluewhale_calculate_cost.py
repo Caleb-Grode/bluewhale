@@ -84,7 +84,7 @@ def get_ebs_cost(region, ebs_type, ebs_name, quantity, size_GB, pc):
         
     # parse out the data we want
     price_per_hour_usd = 0 # to prevent return 'None'
-    for ebs in products: # this goes through the ebse of type 'ebs_type' and selects the price
+    for ebs in products: # this goes through the ebs volumes of type 'ebs_type' and selects the price
         sku = ebs['product']['sku']
         on_demand_code = sku + '.' + 'JRTCKXETXF'
         price_per_hr_code = '6YS6EN2CT7'
