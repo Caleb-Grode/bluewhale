@@ -6,9 +6,17 @@ import json
 import boto3
 
 def lambda_handler(event, context):
+
     # List all regions codes
-    client = boto3.client('ec2')
-    region_codes = [region['RegionName'] for region in client.describe_regions()['Regions']]
+    data = boto3.client('ec2').describe_regions()
+    region_codes = []
+    for r in data['Regions']:
+        region_codes.append(r['RegionName'])
+    while "NextToken" in data:
+        data = boto3.client('ec2').describe_regions()
+        for r in data['Regions']:
+            region_codes.append(r['RegionName'])
+ 
     
     # Get all region names using the region codes
     client = boto3.client('ssm')
