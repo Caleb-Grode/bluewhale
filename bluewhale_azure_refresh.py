@@ -29,7 +29,6 @@ def lambda_handler(event, context):
     
     # API request header
     headers = {'Authorization': 'Bearer ' + token['accessToken'], 'Content-Type': 'application/json'}
-    
     # API params and url
     params = {'api-version': '019-04-01'}
     url = 'https://management.azure.com/subscriptions/'+azure_subscription_id+'/providers/Microsoft.Compute/skus'
