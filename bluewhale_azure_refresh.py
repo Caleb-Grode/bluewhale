@@ -78,7 +78,7 @@ def lambda_handler(event, context):
             if c['name'] == 'vCPUs' or c['name'] == 'MemoryGB' or c['name'] == 'ACUs' or c['name'] == 'vCPUsPerCore' or c['name'] == 'MaxResourceVolumeMB' or c['name'] == 'GPUs':
                 
                 if c['name'] == 'MemoryGB':
-                    vm_specs['MemoryMB'] = int(Decimal(c['value'])*1000) # convert to MB for better matching
+                    vm_specs['MemoryMB'] = int(Decimal(c['value'])*1000) # convert to GB
                 if c['name'] == 'vCPUs' or c['name'] == 'vCPUsPerCore':
                     vm_specs[c['name']] = int(c['value'])
                 else:
