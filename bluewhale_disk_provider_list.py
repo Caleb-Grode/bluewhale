@@ -10,7 +10,6 @@ def lambda_handler(event, context):
     table = dynamodb.Table('bluewhale_resources')
     
     print("Getting data...")
-    # get azure and gcp vm data
     disks = table.scan(
         FilterExpression=  Attr('resource type').eq('virtual disk') 
                            & Attr('provider').eq(provider)
