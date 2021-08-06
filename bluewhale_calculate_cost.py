@@ -66,7 +66,7 @@ def get_ec2_cost(reg, ec2, os, quantity, pc, hours):
         
         
 
-        return hours * float(price_per_hour_usd) * int(quantity)
+        return round(hours * float(price_per_hour_usd) * int(quantity), 2)
     except:
         return 0
 
@@ -84,7 +84,7 @@ def get_ebs_cost(region, ebs_type, ebs_name, quantity, size_GB, pc):
         
     # parse out the data we want
     price_per_hour_usd = 0 # to prevent return 'None'
-    for ebs in products: # this goes through the ebs volumes of type 'ebs_type' and selects the price
+    for ebs in products: # this goes through the ebse of type 'ebs_type' and selects the price
         sku = ebs['product']['sku']
         on_demand_code = sku + '.' + 'JRTCKXETXF'
         price_per_hr_code = '6YS6EN2CT7'
@@ -93,7 +93,7 @@ def get_ebs_cost(region, ebs_type, ebs_name, quantity, size_GB, pc):
             
     
     
-    return float(price_per_hour_usd) * int(quantity) * int(size_GB)
+    return round(float(price_per_hour_usd) * int(quantity) * int(size_GB), 2)
 
 
 def lambda_handler(event, context):
@@ -124,6 +124,9 @@ def lambda_handler(event, context):
     
     return {
         'statusCode': 200,
+        'headers' : {
+                'Access-Control-Allow-Origin': '*',
+            },
         'body': json.dumps({
             'compute costs' : ec2,
             'storage costs' : ebs,

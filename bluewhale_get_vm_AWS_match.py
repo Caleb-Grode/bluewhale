@@ -80,11 +80,10 @@ def get_price_info(reg, ec2, os, pc):
 
 
 def lambda_handler(event, context):
-    print(event)
     # parameters
-    vm_name = event['vm']
-    region = event['region']
-    operating_system = event['os']
+    vm_name = event['queryStringParameters']['vm-to-match']
+    region = event['queryStringParameters']['region']
+    operating_system = event['queryStringParameters']['os']
     matches = []
     match_data = []
 
@@ -98,9 +97,13 @@ def lambda_handler(event, context):
         KeyConditionExpression= Key('name').eq(vm_name)
     )
 
+    print(data['Items'][0])
     matches = data['Items'][0]['AWS_matches']
 
-    pricing_client = boto3.client('pricing', region_name='us-east-1')       
+    pricing_client = boto3.client('pricing', region_name='us-east-1')
+
+
+            
 
     for ec2 in matches:
         price_info = get_price_info(region, ec2, operating_system, pricing_client)
@@ -110,13 +113,18 @@ def lambda_handler(event, context):
     if not match_data:
         print("Region or OS not availiable for current selection")
         return {
-            'statusCode': 200,
+            'statusCode': 500,
+            'headers' : {
+                'Access-Control-Allow-Origin': '*',
+            },
             'body': json.dumps("Invalid region + os selection")
         }
     else:
-        print(match_data)
         return {
-            'statusCode': 500,
+            'statusCode': 200,
+            'headers' : {
+                'Access-Control-Allow-Origin': '*',
+            },
             'body': json.dumps(match_data)
         }
 

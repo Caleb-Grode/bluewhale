@@ -1,3 +1,6 @@
+# Author: Caleb Grode
+# Purpose: return the virtual machines from a given provider in a given compute category
+
 import json
 import boto3
 from boto3.dynamodb.conditions import Attr
@@ -30,6 +33,9 @@ def lambda_handler(event, context):
         
     return {
         'statusCode': 200,
+        'headers' : {
+                'Access-Control-Allow-Origin': '*',
+            },
         'body': json.dumps(third_party_vm)
     }
     
