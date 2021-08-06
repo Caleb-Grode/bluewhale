@@ -1,0 +1,37 @@
+{
+    "ec2": [
+      {
+        "name": "m5a.4xlarge",
+        "region": "Canada (Central)",
+        "os": "Linux",
+        "quantity": "23"
+      }
+    ],
+    "ebs": [
+      {
+        "type": "General Purpose",
+        "name": "gp2",
+        "GB": "45",
+        "region": "Canada (Central)",
+        "quantity": "23"
+      }
+    ]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

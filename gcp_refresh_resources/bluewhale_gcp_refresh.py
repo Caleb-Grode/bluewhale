@@ -1,3 +1,6 @@
+# Author: Caleb Grode
+# Purpose: Refresh the databse with GCP vm & Disk offerings
+
 import json
 import boto3
 import os
@@ -57,7 +60,7 @@ def get_secret():
             decoded_binary_secret = base64.b64decode(get_secret_value_response['SecretBinary'])
             return decoded_binary_secret
 
-
+print(get_secret())
 secret = json.loads(get_secret())
 
 with open('/tmp/cred.json', 'w') as json_file:
@@ -69,7 +72,6 @@ def lambda_handler(event, context):
     # we want the information about the virtual machines that GCP offers
     # their API gives us info by GCP zone
     # to get all vm info we thus need to look through all zones
-    print('Getting vms...')
     zones = []
     credentials = GoogleCredentials.get_application_default()
 
@@ -117,34 +119,7 @@ def lambda_handler(event, context):
     # put machines into the DB
     for k in machines.keys():
         resource_table.put_item(Item=machines[k])
-    
-    print('Getting disks...')
-    # now we will retrieve the available disk types
-    request = service.diskTypes().aggregatedList(project=project)
-    while request is not None:
-        response = request.execute()
-
-        for name, disk_types_scoped_list in response['items'].items():
-            
-            try: # ugly bit of code here, the API does not always include 'diskTypes' in the disk_types_scoped_list                          
-                for disk in disk_types_scoped_list['diskTypes']:
-                    disk_data = {
-                        'name' : disk['name'],
-                        'resource type' : 'virtual disk',
-                        'provider' : 'GCP',
-                        'defaultDiskSizeGb' : disk['defaultDiskSizeGb'],
-                        'description' : disk['description']
-                    }
-                    resource_table.put_item(Item=disk_data)
-            except:
-                print(disk_types_scoped_list)
-
-        request = service.diskTypes().aggregatedList_next(previous_request=request, previous_response=response)
     return {
         'statusCode': 200,
         'body': json.dumps('Refresh complete!')
     }
-
-e = 1
-q = 1
-lambda_handler(e, q)

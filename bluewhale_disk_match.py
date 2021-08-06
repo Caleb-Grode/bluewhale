@@ -1,3 +1,9 @@
+# Author: Caleb Grode
+# Purpose: Matches the 3rd party disk offerings with AWS matches
+# This code will need to be maintaned as the matches are done through a dict
+# we at first wanted to match based off IOPs but the way the different providers list or calculate IOPs differs a lot
+# so the disks are martched by use case
+
 import json
 import boto3
 from boto3.dynamodb.conditions import Attr
@@ -19,7 +25,6 @@ def lambda_handler(event, context):
         'Standard_LRS' : ['st1', 'sc1'],
         'UltraSSD_LRS' : ['io1', 'io2']
     }
-    
     
     
     dynamodb = boto3.resource('dynamodb', endpoint_url="https://dynamodb.us-east-1.amazonaws.com")
@@ -48,7 +53,3 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps('Matching complete!')
     }
-
-e = 1
-t = 1
-lambda_handler(e,t)
